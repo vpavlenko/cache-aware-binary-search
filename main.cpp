@@ -10,7 +10,20 @@ using namespace std;
 
 const int SORTED_ARRAY_SIZE = 100 * 1000 * 1000;
 const int NUM_ITERS = 100 * 1000;
+//const int NUM_ITERS = 1;
 const int L3_INT_ARRAY_SIZE = 100 * 1000;
+
+void show_sketch(string name, int *array, int array_size) {
+    cout << name << ": [ ";
+    for (int i = 0; i < 5; ++i) {
+        cout << array[i] << " ";
+    }
+    cout << "... ";
+    for (int i = array_size - 5; i < array_size; ++i) {
+        cout << array[i] << " ";
+    }
+    cout << "]\n";
+}
 
 int *get_sorted_array(const int array_size) {
     int *result = new int[array_size];
@@ -34,10 +47,6 @@ int *get_random_array(int array_size, int rand_max) {
     return result;
 }
 
-int binary_search_slow(int *array, int array_size, int value) {
-
-}
-
 class SlowBinarySearch {
 public:
     SlowBinarySearch() {}
@@ -50,6 +59,7 @@ public:
     int upper_bound(int query) const {
         int left = 0, right = sorted_array_size_;
         while (left + 1 < right) {
+//            cout << "slow_run " << left << " " << right << "\n";
             int mid = (left + right) >> 1;
             if (sorted_array_[mid] <= query) {
                 left = mid;
@@ -79,6 +89,8 @@ public:
             top_level_sorted_array[i] = sorted_array[i * chunk_size_];
         }
         topLevelBinarySearch_ = SlowBinarySearch(top_level_sorted_array, inner_array_size);
+
+        show_sketch("top_level_array", top_level_sorted_array, inner_array_size);
     }
 
     int upper_bound(int query) const {
@@ -134,39 +146,32 @@ void assertEquals(int *first_array, int *second_array, int array_size) {
     }
 }
 
-void show_sketch(string name, int *array, int array_size) {
-    cout << name << ": [ ";
-    for (int i = 0; i < 5; ++i) {
-        cout << array[i] << " ";
-    }
-    cout << "... ";
-    for (int i = array_size - 5; i < array_size; ++i) {
-        cout << array[i] << " ";
-    }
-    cout << "]\n";
-}
-
 int main() {
-    cout << "get_sorted_array BEGIN\n";
     int *sorted_array = get_sorted_array(SORTED_ARRAY_SIZE);
-    cout << "get_sorted_array END\n";
 
     int *query = get_random_array(NUM_ITERS, sorted_array[SORTED_ARRAY_SIZE - 1]);
 
+
+
     int *slow_result = new int[NUM_ITERS];
-    int *fast_result = new int[NUM_ITERS];
 
     show_sketch("sorted_array", sorted_array, SORTED_ARRAY_SIZE);
     show_sketch("query", query, NUM_ITERS);
 
     Measurer measurer_slow("slow", NUM_ITERS);
+    SlowBinarySearch slowBinarySearch(sorted_array, SORTED_ARRAY_SIZE);
+
     measurer_slow.start();
     for (int i = 0; i < NUM_ITERS; ++i) {
-        slow_result[i] = binary_search_slow(sorted_array, SORTED_ARRAY_SIZE, query[i]);
+        slow_result[i] = slowBinarySearch.upper_bound(query[i]);
     }
     measurer_slow.stop();
 
+    show_sketch("slow_result", slow_result, NUM_ITERS);
 
+
+
+    int *fast_result = new int[NUM_ITERS];
 
     Measurer measurer_fast("fast", NUM_ITERS);
     FastBinarySearch fastBinarySearch(sorted_array, SORTED_ARRAY_SIZE);
@@ -182,8 +187,9 @@ int main() {
     }
     measurer_fast.stop();
 
-    show_sketch("slow_result", slow_result, NUM_ITERS);
     show_sketch("fast_result", fast_result, NUM_ITERS);
+
+
 
     assertEquals(slow_result, fast_result, NUM_ITERS);
 
