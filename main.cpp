@@ -10,8 +10,8 @@ using namespace std;
 
 const int SORTED_ARRAY_SIZE = 100 * 1000 * 1000;
 const int NUM_ITERS = 100 * 1000;
-//const int NUM_ITERS = 1;
 const int L3_INT_ARRAY_SIZE = 100 * 1000;
+const int L1_INT_ARRAY_SIZE = 2 * 1000;
 
 void show_sketch(string name, int *array, int array_size) {
     cout << name << ": [ ";
@@ -57,9 +57,11 @@ public:
     }
 
     int upper_bound(int query) const {
-        int left = 0, right = sorted_array_size_;
+        return upper_bound(query, 0, sorted_array_size_);
+    }
+
+    int upper_bound(int query, int left, int right) const {
         while (left + 1 < right) {
-//            cout << "slow_run " << left << " " << right << "\n";
             int mid = (left + right) >> 1;
             if (sorted_array_[mid] <= query) {
                 left = mid;
@@ -79,39 +81,62 @@ class FastBinarySearch {
 public:
     FastBinarySearch(int *sorted_array, int sorted_array_size) :
             sorted_array_(sorted_array), sorted_array_size_(sorted_array_size) {
-        chunk_size_ = sorted_array_size / L3_INT_ARRAY_SIZE;
-        int inner_array_size = ceil((double)sorted_array_size / chunk_size_);
-        cout << "chunk_size: " << chunk_size_ << "\n";
-        cout << "inner_array_size: " << inner_array_size << "\n";
+        arrayBinarySearch_ = SlowBinarySearch(sorted_array, sorted_array_size);
 
-        int *top_level_sorted_array = new int[inner_array_size];
-        for (int i = 0; i < inner_array_size; ++i) {
-            top_level_sorted_array[i] = sorted_array[i * chunk_size_];
-        }
-        topLevelBinarySearch_ = SlowBinarySearch(top_level_sorted_array, inner_array_size);
 
-        show_sketch("top_level_array", top_level_sorted_array, inner_array_size);
+
+        middle_level_chunk_size_ = sorted_array_size / L3_INT_ARRAY_SIZE;
+        middle_level_array_size_ = ceil((double)sorted_array_size / middle_level_chunk_size_);
+        cout << "middle_level_chunk_size: " << middle_level_chunk_size_ << "\n";
+        cout << "middle_level_array_size_: " << middle_level_array_size_ << "\n";
+
+        int *middle_level_sorted_array =
+                get_slice_array_(sorted_array, sorted_array_size,
+                        middle_level_array_size_, middle_level_chunk_size_);
+        middleLevelBinarySearch_ = SlowBinarySearch(middle_level_sorted_array, middle_level_array_size_);
+
+        show_sketch("middle_level_array", middle_level_sorted_array, middle_level_array_size_);
+
+
+
+        top_level_chunk_size_ = middle_level_array_size_ / L1_INT_ARRAY_SIZE;
+        int top_level_array_size = ceil((double)middle_level_array_size_ / top_level_chunk_size_);
+        cout << "top_level_chunk_size: " << top_level_chunk_size_ << "\n";
+        cout << "top_level_array_size: " << top_level_array_size << "\n";
+
+        int *top_level_sorted_array =
+                get_slice_array_(middle_level_sorted_array, middle_level_array_size_,
+                        top_level_array_size, top_level_chunk_size_);
+        topLevelBinarySearch_ = SlowBinarySearch(top_level_sorted_array, top_level_array_size);
+
+        show_sketch("top_level_array", top_level_sorted_array, top_level_array_size);
     }
 
     int upper_bound(int query) const {
         int top_level_answer = topLevelBinarySearch_.upper_bound(query);
-        int left = top_level_answer * chunk_size_;
-        int right = min((top_level_answer + 1) * chunk_size_, sorted_array_size_);
-        while (left + 1 < right) {
-            int mid = (left + right) >> 1;
-            if (sorted_array_[mid] <= query) {
-                left = mid;
-            } else {
-                right = mid;
-            }
-        }
-        return left;
+        int middle_left = top_level_answer * top_level_chunk_size_;
+        int middle_right = min((top_level_answer + 1) * top_level_chunk_size_, middle_level_array_size_);
+
+        int middle_level_answer = middleLevelBinarySearch_.upper_bound(query, middle_left, middle_right);
+
+        int left = middle_level_answer * middle_level_chunk_size_;
+        int right = min((middle_level_answer + 1) * middle_level_chunk_size_, sorted_array_size_);
+
+        return arrayBinarySearch_.upper_bound(query, left, right);
     }
 
 private:
     int *sorted_array_;
-    int sorted_array_size_, chunk_size_;
-    SlowBinarySearch topLevelBinarySearch_;
+    int sorted_array_size_, middle_level_chunk_size_, top_level_chunk_size_, middle_level_array_size_;
+    SlowBinarySearch arrayBinarySearch_, middleLevelBinarySearch_, topLevelBinarySearch_;
+
+    int *get_slice_array_(int *source_array, int source_array_size, int dest_array_size, int dest_chunk_size) {
+        int *dest_array = new int[dest_array_size];
+        for (int i = 0; i < dest_array_size; ++i) {
+            dest_array[i] = source_array[i * dest_chunk_size];
+        }
+        return dest_array;
+    }
 };
 
 class Measurer {
