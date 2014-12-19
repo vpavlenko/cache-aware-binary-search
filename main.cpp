@@ -27,7 +27,7 @@ int *get_sorted_array(const int array_size) {
 int *get_random_array(int array_size, int rand_max) {
     int *result = new int[array_size];
     std::minstd_rand generator;
-    std::uniform_int_distribution random_int_generator(0, rand_max);
+    std::uniform_int_distribution<> random_int_generator(0, rand_max);
     for (int i = 0; i < array_size; ++i) {
         result[i] = random_int_generator(generator);
     }
@@ -114,8 +114,8 @@ public:
         auto stop = std::chrono::high_resolution_clock::now();
         auto delta = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start_).count();
         assert((sizeof delta) == 8);
-        std::cout << name_ << ", " << num_iters_ << "iterations: " << delta << " ns";
-        std::cout << name_ << ": " << delta / (double)num_iters_ << " ns per iteration";
+        std::cout << name_ << ", " << num_iters_ << " iterations: " << delta << " ns\n";
+        std::cout << name_ << ": " << delta / (double)num_iters_ << " ns per iteration\n";
     }
 
 private:
@@ -134,6 +134,18 @@ void assertEquals(int *first_array, int *second_array, int array_size) {
     }
 }
 
+void show_sketch(string name, int *array, int array_size) {
+    cout << name << ": [ ";
+    for (int i = 0; i < 5; ++i) {
+        cout << array[i] << " ";
+    }
+    cout << "... ";
+    for (int i = array_size - 5; i < array_size; ++i) {
+        cout << array[i] << " ";
+    }
+    cout << "]\n";
+}
+
 int main() {
     cout << "get_sorted_array BEGIN\n";
     int *sorted_array = get_sorted_array(SORTED_ARRAY_SIZE);
@@ -144,12 +156,17 @@ int main() {
     int *slow_result = new int[NUM_ITERS];
     int *fast_result = new int[NUM_ITERS];
 
+    show_sketch("sorted_array", sorted_array, SORTED_ARRAY_SIZE);
+    show_sketch("query", query, NUM_ITERS);
+
     Measurer measurer_slow("slow", NUM_ITERS);
     measurer_slow.start();
     for (int i = 0; i < NUM_ITERS; ++i) {
         slow_result[i] = binary_search_slow(sorted_array, SORTED_ARRAY_SIZE, query[i]);
     }
     measurer_slow.stop();
+
+
 
     Measurer measurer_fast("fast", NUM_ITERS);
     FastBinarySearch fastBinarySearch(sorted_array, SORTED_ARRAY_SIZE);
@@ -164,6 +181,9 @@ int main() {
         fast_result[i] = fastBinarySearch.upper_bound(query[i]);
     }
     measurer_fast.stop();
+
+    show_sketch("slow_result", slow_result, NUM_ITERS);
+    show_sketch("fast_result", fast_result, NUM_ITERS);
 
     assertEquals(slow_result, fast_result, NUM_ITERS);
 
