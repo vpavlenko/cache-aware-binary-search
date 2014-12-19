@@ -20,4 +20,5 @@ Issues
 
 1. Show compiler version, compiler flags, operating system, CPU type and parameters.
 2. Put model calculations that explain these numbers.
+3. Run several times, calculate average and standard deviation: these numbers are shown to have 20% volatility.
 3. Attach disassembler output.
