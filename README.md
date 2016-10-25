@@ -1,4 +1,4 @@
-This is sample code that shows how cache-oblivious binary search can be faster than a dumb one.
+This is sample code that shows how cache-aware binary search can be faster than a dumb one.
 
 Sample output:
 ```
@@ -22,3 +22,9 @@ Issues
 2. Put model calculations that explain these numbers.
 3. Run several times, calculate average and standard deviation: these numbers are shown to have 20% volatility.
 3. Attach disassembler output.
+
+
+Discussion
+---
+
+https://vk.com/wall2847854_17389
